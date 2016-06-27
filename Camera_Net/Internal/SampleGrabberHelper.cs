@@ -162,6 +162,9 @@ namespace Camera_NET
         {
             // Note that we depend on only being called once per call to Click.  Otherwise
             // a second call can overwrite the previous image.
+
+            if (BufferLen == 0) return 0;
+
             Debug.Assert(BufferLen == Math.Abs(m_videoBitCount/8*m_videoWidth) * m_videoHeight, "Incorrect buffer length");
 
             if (m_bWantOneFrame)
