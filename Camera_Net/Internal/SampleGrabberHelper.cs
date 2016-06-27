@@ -46,7 +46,7 @@ namespace Camera_NET
     /// 
     /// <author> free5lot (free5lot@yandex.ru) </author>
     /// <version> 2013.10.17 </version>
-    internal sealed class SampleGrabberHelper : ISampleGrabberCB, IDisposable
+    public sealed class SampleGrabberHelper : ISampleGrabberCB, IDisposable
     {
         #region Public
 

@@ -34,7 +34,7 @@ namespace Camera_NET
 
     #endregion
 
-    internal sealed class DirectXInterfaces
+    public sealed class DirectXInterfaces
     {
         /// <summary>
         /// Constructor for <see cref="DirectXInterfaces"/> class.
