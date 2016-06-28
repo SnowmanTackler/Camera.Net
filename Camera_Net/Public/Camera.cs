@@ -930,12 +930,12 @@ namespace Camera_NET
         /// </summary>
         /// <returns>Snapshot as a Bitmap</returns>
         /// <seealso cref="SnapshotOutputImage"/>
-        public Bitmap SnapshotSourceImage()
+        public Bitmap SnapshotSourceImage(RotateFlipType rft = RotateFlipType.RotateNoneFlipNone)
         {
             if (_pSampleGrabberHelper == null)
                 throw new Exception("SampleGrabberHelper is not initialized.");
 
-            return _pSampleGrabberHelper.SnapshotNextFrame();
+            return _pSampleGrabberHelper.SnapshotNextFrame(rft);
         }
 
         #endregion

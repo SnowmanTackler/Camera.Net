@@ -187,7 +187,7 @@ namespace Camera_NET
         /// Makes a snapshot of next frame
         /// </summary>
         /// <returns>Bitmap with snapshot</returns>
-        public Bitmap SnapshotNextFrame()
+        public Bitmap SnapshotNextFrame(RotateFlipType rft)
         {
             if (m_SampleGrabber == null)
                 throw new Exception("SampleGrabber was not initialized");
@@ -221,7 +221,7 @@ namespace Camera_NET
             Bitmap bitmap = new Bitmap(m_videoWidth, m_videoHeight, (m_videoBitCount / 8) * m_videoWidth, pixelFormat, ip);
 
             bitmap_clone = bitmap.Clone(new Rectangle(0, 0, m_videoWidth, m_videoHeight), PixelFormat.Format24bppRgb);
-            bitmap_clone.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            bitmap_clone.RotateFlip(rft);
 
             // Release any previous buffer
             if (ip != IntPtr.Zero)
