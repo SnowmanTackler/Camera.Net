@@ -52,5 +52,5 @@ using System.Security.Permissions;
 [assembly : AssemblyKeyName("")]
 [assembly : ComVisible(false)]
 [assembly : CLSCompliant(true)]
-//Warning	77	'System.Security.Permissions.SecurityAction.RequestMinimum' is obsolete: '"Assembly level declarative security is obsolete and is no longer enforced by the CLR by default. See http://go.microsoft.com/fwlink/?LinkID=155570 for more information."'	D:\place\Atom_Development\Modules\CameraPlugin\Camera_NET\DirectShowLib\AssemblyInfo.cs	53	32	DirectShowLib-2010
+//Warning	77	'System.Security.Permissions.SecurityAction.RequestMinimum' is obsolete: '"Assembly level declarative security is obsolete and is no longer enforced by the CLR by default. See http://go.microsoft.com/fwlink/?LinkID=155570 for more information."'	D:\place\Atom_Development\Modules\CameraPlugin\Camera.Net\DirectShowLib\AssemblyInfo.cs	53	32	DirectShowLib-2010
 //[assembly : SecurityPermission(SecurityAction.RequestMinimum, UnmanagedCode=true)]

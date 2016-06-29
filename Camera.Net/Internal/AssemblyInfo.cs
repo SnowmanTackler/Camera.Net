@@ -1,9 +1,9 @@
 #region License
 
 /*
-Camera_NET - Camera wrapper for directshow for .NET
+Camera.Net - Camera wrapper for directshow for .NET
 Copyright (C) 2013
-https://github.com/free5lot/Camera_Net
+https://github.com/free5lot/Camera.Net
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,7 @@ using System.Runtime.CompilerServices;
 // General Information about an assembly
 //
 
-[assembly: AssemblyTitle("Camera_NET")]
+[assembly: AssemblyTitle("Camera.Net")]
 [assembly: AssemblyDescription("Camera .NET wrapper for DirectShow")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]

@@ -1,9 +1,9 @@
 ﻿#region License
 
 /*
-Camera_NET - Camera wrapper for directshow for .NET
+Camera.Net - Camera wrapper for directshow for .NET
 Copyright (C) 2013
-https://github.com/free5lot/Camera_Net
+https://github.com/free5lot/Camera.Net
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@ License along with this library. If not, see <http://www.gnu.org/licenses/>.
 
 #endregion
 
-namespace Camera_NET
+namespace Camera.Net
 {
     #region Using directives
 
