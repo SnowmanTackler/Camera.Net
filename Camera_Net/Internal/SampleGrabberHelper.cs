@@ -119,7 +119,7 @@ namespace Camera_NET
         /// <summary>
         /// Gets and saves mode (mediatype, format type and etc). 
         /// </summary>
-        public void SaveMode()
+        public Resolution SaveMode()
         {
             int hr;
 
@@ -143,6 +143,8 @@ namespace Camera_NET
 
             DsUtils.FreeAMMediaType(media);
             media = null;
+
+            return new Resolution(m_videoWidth, m_videoHeight);
         }
 
         /// <summary>
@@ -406,6 +408,10 @@ namespace Camera_NET
         }
 
         #endregion
-    }
 
+        public bool Ready()
+        {
+            return this.m_SampleGrabber != null;
+        }
+    }
 }
