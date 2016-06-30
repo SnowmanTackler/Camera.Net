@@ -100,7 +100,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Camera.Net\CameraNet.csproj">
+    <ProjectReference Include="..\..\CameraNet\CameraNet.csproj">
       <Project>{416ef23a-48fe-4185-9ae2-f610ccb06285}</Project>
       <Name>Camera.Net</Name>
     </ProjectReference>
