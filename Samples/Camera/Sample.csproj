@@ -100,13 +100,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Camera.Net\Camera.Net.csproj">
+    <ProjectReference Include="..\..\Camera.Net\CameraNet.csproj">
       <Project>{416ef23a-48fe-4185-9ae2-f610ccb06285}</Project>
       <Name>Camera.Net</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\DirectShowLib\DirectShowLib-2010.csproj">
+    <ProjectReference Include="..\..\DirectShowLib\DirectShow.csproj">
       <Project>{ce009bfa-5ef6-4153-b2a1-2fa79698a9ae}</Project>
-      <Name>DirectShowLib-2010</Name>
+      <Name>DirectShow</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

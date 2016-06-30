@@ -1,4 +1,4 @@
-﻿namespace Camera.Net
+﻿namespace CameraNet
 {
     partial class CameraControl
     {

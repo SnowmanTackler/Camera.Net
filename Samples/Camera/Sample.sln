@@ -5,9 +5,9 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample", "Sample.csproj", "{7294A6B7-B349-4FCA-A4EA-098886C7DA7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Camera.Net", "..\..\Camera.Net\Camera.Net.csproj", "{416EF23A-48FE-4185-9AE2-F610CCB06285}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraNet", "..\..\Camera.Net\CameraNet.csproj", "{416EF23A-48FE-4185-9AE2-F610CCB06285}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DirectShowLib-2010", "..\..\DirectShowLib\DirectShowLib-2010.csproj", "{CE009BFA-5EF6-4153-B2A1-2FA79698A9AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DirectShow", "..\..\DirectShowLib\DirectShow.csproj", "{CE009BFA-5EF6-4153-B2A1-2FA79698A9AE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

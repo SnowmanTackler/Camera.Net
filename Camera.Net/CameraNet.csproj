@@ -150,9 +150,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DirectShowLib\DirectShowLib-2010.csproj">
+    <ProjectReference Include="..\DirectShowLib\DirectShow.csproj">
       <Project>{ce009bfa-5ef6-4153-b2a1-2fa79698a9ae}</Project>
-      <Name>DirectShowLib-2010</Name>
+      <Name>DirectShow</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

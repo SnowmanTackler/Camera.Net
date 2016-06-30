@@ -14,7 +14,7 @@ using Microsoft.Win32;
 // Use DirectShowLib (LGPL v2.1)
 using DirectShowLib;
 
-namespace Camera.Net
+namespace CameraNet
 {
     /// <summary>
     /// This is similar to the CameraSnapAndRender, however it doesn't use the rendering pipeline at all.

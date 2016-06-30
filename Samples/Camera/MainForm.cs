@@ -7,7 +7,7 @@ using System.Drawing.Text;
 using System.Runtime.InteropServices.ComTypes;
 
 
-using Camera.Net;
+using CameraNet;
 
 namespace SampleProject
 {
