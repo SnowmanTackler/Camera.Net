@@ -22,6 +22,16 @@ namespace SampleProject
             InitializeComponent();
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            this.CloseCamera();
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
         public void CloseCamera()
         {
             if (_Camera != null)
@@ -49,6 +59,8 @@ namespace SampleProject
             FillResolutionList();
 
             this.Enabled = true;
+
+            this.timer1.Enabled = true;
         }
 
         // On close of Form
@@ -58,7 +70,7 @@ namespace SampleProject
         }
 
         // Set current camera to camera_device
-        private void SetCamera(IMoniker moniker, Resolution resolution)
+        private void SetCamera(IMoniker moniker, Resolution resolution = null)
         {
             try
             {
@@ -96,25 +108,6 @@ namespace SampleProject
             {
                 MessageBox.Show(e.Message, @"Error while running camera");
             }
-        }
-
-        private void buttonSnapshotNextSourceFrame_Click(object sender, EventArgs e)
-        {
-            if (this._Camera == null) return;
-
-
-            Bitmap bitmap = null;
-            try
-            {
-                bitmap = this._Camera.SnapshotSourceImage();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, @"Error while getting a snapshot");
-            }
-
-            if (bitmap == null)
-                return;
         }
 
         private void buttonCameraSettings_Click(object sender, EventArgs e)
@@ -177,8 +170,7 @@ namespace SampleProject
 
             ResolutionList resolutions = CameraSnap.GetResolutionList(this._Camera.Moniker);
 
-            if (resolutions == null)
-                return;
+            if (resolutions == null)return;
 
             int index_to_select = -1;
 
@@ -220,7 +212,7 @@ namespace SampleProject
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void timer1_Tick(object sender, EventArgs e)
         {
             if (this.pictureBox1.Image != null)
             {
@@ -230,14 +222,24 @@ namespace SampleProject
 
             if (this._Camera == null) return;
 
-            if (this._Camera.Ready())
-                this.pictureBox1.Image = this._Camera.SnapshotSourceImage();
-        }
 
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            
-            this.button1_Click(sender, e);
+            if (this._Camera.Ready())
+            {
+                Bitmap bitmap = null;
+                try
+                {
+                    bitmap = this._Camera.SnapshotSourceImage();
+                    this.pictureBox1.Image = bitmap;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, @"Error while getting a snapshot");
+                    this.CloseCamera();
+                }
+
+                return;
+
+            }
         }
 
     }
