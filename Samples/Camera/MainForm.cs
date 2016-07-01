@@ -163,7 +163,6 @@ namespace SampleProject
         {
             comboBoxResolutionList.Items.Clear();
             this.comboBoxResolutionList.Enabled = false;
-            this.timerResolution.Enabled = true;
 
             if (this._Camera == null) return;
             if (this._Camera.Resolution == null) return;
@@ -188,16 +187,10 @@ namespace SampleProject
             if (index_to_select >= 0)
             {
                 this.comboBoxResolutionList.SelectedIndex = index_to_select;
-                this.timerResolution.Enabled = false;
                 this.comboBoxResolutionList.Enabled = true;
             }
         }
 
-        private void timerResolution_Tick(object sender, EventArgs e)
-        {
-            this.timerResolution.Enabled = false;
-            this.FillResolutionList();
-        }
 
 
         private void FillCameraList()
