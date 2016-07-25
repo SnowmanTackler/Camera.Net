@@ -769,7 +769,8 @@ namespace CameraNet
             if (_pSampleGrabberHelper == null)
                 throw new Exception("SampleGrabberHelper is not initialized.");
 
-            return _pSampleGrabberHelper.SnapshotNextFrame(rft);
+            throw new Exception("DEPRECATED");
+            //            return _pSampleGrabberHelper.SnapshotNextFrame(rft);
         }
 
         #endregion
@@ -1084,7 +1085,7 @@ namespace CameraNet
             
             // Configure the sample grabber
             DX.SampleGrabberFilter = DX.SampleGrabber as IBaseFilter;
-            _pSampleGrabberHelper = new SampleGrabberHelper(DX.SampleGrabber, false);
+            _pSampleGrabberHelper = new SampleGrabberHelper(DX.SampleGrabber, null, RotateFlipType.RotateNoneFlipNone);
 
             _pSampleGrabberHelper.ConfigureMode();
 

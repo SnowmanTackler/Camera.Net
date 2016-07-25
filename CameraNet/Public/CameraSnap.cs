@@ -129,41 +129,6 @@ namespace CameraNet
             get { return _ResolutionList; }
         }
 
-        /// <summary>
-        /// Gets a value that determines whether or not the crossbar is available for selected camera.
-        /// </summary> 
-        /// <seealso cref="VideoInput"/>
-        public bool CrossbarAvailable
-        {
-            get { return (DX.Crossbar != null); }
-        }
-
-        /// <summary>
-        /// Gets or sets a video input of camera (via crossbar).
-        /// </summary> 
-        /// <seealso cref="CrossbarAvailable"/>
-        public VideoInput VideoInput
-        {
-            get
-            {
-                return _VideoInput;
-            }
-            set
-            {
-                if (value == null)
-                    throw new ArgumentNullException("VideoInput", "VideoInput should not be set to null, use Default instead.");
-
-                _VideoInput = value;
-
-                // If we need to change
-                if (_bGraphIsBuilt)
-                {
-                    CameraHelpers.SetCrossbarInput(DX.Crossbar, _VideoInput);
-
-                    _VideoInput = CameraHelpers.GetCrossbarInput(DX.Crossbar);
-                }
-            }
-        }
 
         /// <summary>
         /// Log file path for directshow (used in BuildGraph)
@@ -289,7 +254,7 @@ namespace CameraNet
         /// <summary>
         /// Builds DirectShow graph for rendering.
         /// </summary>
-        public void BuildGraph()
+        public void BuildGraph(Action<Bitmap> act, RotateFlipType rft)
         {
             _bGraphIsBuilt = false;
 
@@ -308,8 +273,9 @@ namespace CameraNet
 #endif
 
                 // -------------------------------------------------------
-                GraphBuilding_AddFilters();
-
+                GraphBuilding_AddFilter_Source();
+                GraphBuilding_SetSourceParams();
+                GraphBuilding_AddFilter_SampleGrabber(act, rft);
                 GraphBuilding_ConnectPins();
 
                 // -------------------------------------------------------
@@ -370,22 +336,6 @@ namespace CameraNet
 
 
         /// <summary>
-        /// Displays property page for crossbar if it's available.
-        /// </summary>
-        /// <param name="hwndOwner">The window handler for to make it parent of property page.</param>
-        /// <seealso cref="CrossbarAvailable"/>
-        public void DisplayPropertyPage_Crossbar(IntPtr hwndOwner)
-        {
-            if (DX.Crossbar == null)
-                return;
-
-            CameraHelpers.DisplayPropertyPageFilter((IBaseFilter)DX.Crossbar, hwndOwner);
-
-            // update VideoInput - it can be changed
-            _VideoInput = CameraHelpers.GetCrossbarInput(DX.Crossbar);
-        }
-
-        /// <summary>
         /// Displays property page for capture filter.
         /// </summary>
         /// <param name="hwndOwner">The window handler for to make it parent of property page.</param>
@@ -421,55 +371,15 @@ namespace CameraNet
 
         #endregion
 
-        #region Spanshot (screenshots) frame
-
-        /// <summary>
-        /// Make snapshot of source image. Much faster than SnapshotOutputImage.
-        /// </summary>
-        /// <returns>Snapshot as a Bitmap</returns>
-        /// <seealso cref="SnapshotOutputImage"/>
-        public Bitmap SnapshotSourceImage(RotateFlipType rft = RotateFlipType.RotateNoneFlipNone)
-        {
-            if (_pSampleGrabberHelper == null)
-                throw new Exception("SampleGrabberHelper is not initialized.");
-
-            return _pSampleGrabberHelper.SnapshotNextFrame(rft);
-        }
-
-        public bool Ready()
-        {
-            if (_pSampleGrabberHelper == null) return false;
-            else return _pSampleGrabberHelper.Ready();
-
-        }
-
-        #endregion
-
-        #endregion
-
         // ====================================================================
-
-        #region Private members
 
         #region Graph building stuff
 
-        /// <summary>
-        /// Adds filters to DirectShow graph.
-        /// </summary>
-        private void GraphBuilding_AddFilters()
-        {
-            AddFilter_Source();
-            SetSourceParams();
-
-            AddFilter_Crossbar();
-
-            AddFilter_SampleGrabber();
-        }
 
         /// <summary>
         /// Sets the Framerate, and video size.
         /// </summary>
-        private void SetSourceParams()
+        private void GraphBuilding_SetSourceParams()
         {
             // Pins used in graph
             IPin pinSourceCapture = null;
@@ -538,7 +448,7 @@ namespace CameraNet
         /// <summary>
         /// Adds video source filter to the filter graph.
         /// </summary>
-        private void AddFilter_Source()
+        private void GraphBuilding_AddFilter_Source()
         {
             int hr = 0;
 
@@ -548,67 +458,11 @@ namespace CameraNet
 
             _ResolutionList = CameraHelpers.GetResolutionsAvailable(DX.CaptureFilter);
         }
-
-        /// <summary>
-        /// Adds crossbar filter to the filter graph.
-        /// </summary>
-        private void AddFilter_Crossbar()
-        {
-            // NOTE: It's hard to add suitable crossbar manually
-            // It's easy to add it by using ICaptureGraphBuilder2
-            // This way seems to be ugly (and it totally is)
-            // but it's Microsoft's recommended approach 
-            // See http://msdn.microsoft.com/en-us/library/windows/desktop/dd390973%28v=vs.85%29.aspx
-            // --------------------------------------------------
-
-            int hr = 0;
-
-            DX.Crossbar = null;
-
-            ICaptureGraphBuilder2 graphBuilder = null;
-
-            try
-            {
-                graphBuilder = (ICaptureGraphBuilder2)new CaptureGraphBuilder2();
-
-                // set filter graph to the capture graph builder
-                hr = graphBuilder.SetFiltergraph((IGraphBuilder)DX.FilterGraph);
-                DsError.ThrowExceptionForHR(hr);
-
-                // get crossbar object to to allows configuring pins of capture card
-                object crossbarObject = null;
-
-                graphBuilder.FindInterface(FindDirection.UpstreamOnly, Guid.Empty, DX.CaptureFilter, typeof(IAMCrossbar).GUID, out crossbarObject);
-                if (crossbarObject != null)
-                {
-                    DX.Crossbar = (IAMCrossbar)crossbarObject;
-                }
-
-            }
-            finally
-            {
-                CameraHelpers.SafeReleaseComObject(graphBuilder);
-                graphBuilder = null;
-            }
-
-            // check is crossbar is needed
-            if (DX.Crossbar != null)
-            {
-                hr = DX.FilterGraph.AddFilter((IBaseFilter)DX.Crossbar, "Crossbar");
-                DsError.ThrowExceptionForHR(hr);
-
-                // Route Crossbar's inputs
-                CameraHelpers.SetCrossbarInput(DX.Crossbar, _VideoInput);
-
-                _VideoInput = CameraHelpers.GetCrossbarInput(DX.Crossbar);
-            }
-        }
-        
-        
+                
         /// <summary>
         /// Adds SampleGrabber for screenshot making.
         /// </summary>
-        private void AddFilter_SampleGrabber()
+        private void GraphBuilding_AddFilter_SampleGrabber(Action<Bitmap> bp, RotateFlipType rft)
         {
             int hr = 0;
 
@@ -617,7 +471,7 @@ namespace CameraNet
             
             // Configure the sample grabber
             DX.SampleGrabberFilter = DX.SampleGrabber as IBaseFilter;
-            _pSampleGrabberHelper = new SampleGrabberHelper(DX.SampleGrabber, false);
+            _pSampleGrabberHelper = new SampleGrabberHelper(DX.SampleGrabber, bp, rft);
 
             _pSampleGrabberHelper.ConfigureMode();
 
@@ -625,6 +479,7 @@ namespace CameraNet
             hr = DX.FilterGraph.AddFilter(DX.SampleGrabberFilter, "Sample Grabber");
             DsError.ThrowExceptionForHR(hr);
         }
+
 
         #endregion
 

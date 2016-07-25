@@ -48,18 +48,29 @@ namespace CameraNet
     /// <version> 2013.10.17 </version>
     internal sealed class SampleGrabberHelper : ISampleGrabberCB, IDisposable
     {
-        #region Public
+        private readonly RotateFlipType _RotateFlipType;
+        private Action<Bitmap> _RawImageEventHandler = null;
+
+        private int _ResolutionWidth;
+        private int _ResolutionHeight;
+        private int _ResolutionBitsPerPixel;
+        private int _ResolutionSizeBytes;
+
+        /// <summary>
+        /// Pointer to COM-interface ISampleGrabber.
+        /// </summary>
+        private ISampleGrabber _SampleGrabber = null;
+        private object _DeltaLock = new object();
 
         /// <summary>
         /// Default constructor for <see cref="SampleGrabberHelper"/> class.
         /// </summary>
         /// <param name="sampleGrabber">Pointer to COM-interface ISampleGrabber.</param>
-        /// <param name="buffer_samples_of_current_frame">Flag means should helper store (buffer) samples of current frame or not.</param>
-        public SampleGrabberHelper(ISampleGrabber sampleGrabber, bool buffer_samples_of_current_frame)
+        public SampleGrabberHelper(ISampleGrabber sampleGrabber, Action<Bitmap> raw_image_handler, RotateFlipType rft = RotateFlipType.RotateNoneFlipNone)
         {
-            m_SampleGrabber = sampleGrabber;
-
-            m_bBufferSamplesOfCurrentFrame = buffer_samples_of_current_frame;
+            _SampleGrabber = sampleGrabber;
+            this._RawImageEventHandler = raw_image_handler;
+            this._RotateFlipType = rft;
         }
 
         /// <summary>
@@ -67,8 +78,11 @@ namespace CameraNet
         /// </summary>
         public void Dispose()
         {
- 
-            m_SampleGrabber = null;
+            lock (_DeltaLock)
+            {
+                this._RawImageEventHandler = null;
+                this._SampleGrabber = null;
+            }
         }
 
         /// <summary>
@@ -76,35 +90,28 @@ namespace CameraNet
         /// </summary>
         public void ConfigureMode()
         {
-            int hr;
-            AMMediaType media = new AMMediaType();
-
-            // Set the media type to Video/RBG24
-            media.majorType = MediaType.Video;
-            media.subType = MediaSubType.RGB24;
-            media.formatType = FormatType.VideoInfo;
-            hr = m_SampleGrabber.SetMediaType(media);
-            DsError.ThrowExceptionForHR(hr);
-
-            DsUtils.FreeAMMediaType(media);
-            media = null;
-
-            // Configure the samplegrabber
-
-            // To save current frame via SnapshotNextFrame
-            //ISampleGrabber::SetCallback method
-            // Note  [Deprecated. This API may be removed from future releases of Windows.]
-            // http://msdn.microsoft.com/en-us/library/windows/desktop/dd376992%28v=vs.85%29.aspx
-            hr = m_SampleGrabber.SetCallback(this, 1); // 1 == WhichMethodToCallback, call the ISampleGrabberCB::BufferCB method
-            DsError.ThrowExceptionForHR(hr);
-
-            // To save current frame via SnapshotCurrentFrame
-            if (m_bBufferSamplesOfCurrentFrame)
+            lock (_DeltaLock)
             {
-                //ISampleGrabber::SetBufferSamples method
+                int hr;
+                AMMediaType media = new AMMediaType();
+
+                // Set the media type to Video/RBG24
+                media.majorType = MediaType.Video;
+                media.subType = MediaSubType.RGB24;
+                media.formatType = FormatType.VideoInfo;
+                hr = _SampleGrabber.SetMediaType(media);
+                DsError.ThrowExceptionForHR(hr);
+
+                DsUtils.FreeAMMediaType(media);
+                media = null;
+
+                // Configure the samplegrabber
+
+                // To save current frame via SnapshotNextFrame
+                //ISampleGrabber::SetCallback method
                 // Note  [Deprecated. This API may be removed from future releases of Windows.]
-                // http://msdn.microsoft.com/en-us/windows/dd376991
-                hr = m_SampleGrabber.SetBufferSamples(true);
+                // http://msdn.microsoft.com/en-us/library/windows/desktop/dd376992%28v=vs.85%29.aspx
+                hr = _SampleGrabber.SetCallback(this, 1); // 1 == WhichMethodToCallback, call the ISampleGrabberCB::BufferCB method
                 DsError.ThrowExceptionForHR(hr);
             }
         }
@@ -114,30 +121,33 @@ namespace CameraNet
         /// </summary>
         public Resolution SaveMode()
         {
-            int hr;
-
-            // Get the media type from the SampleGrabber
-            AMMediaType media = new AMMediaType();
-
-            hr = m_SampleGrabber.GetConnectedMediaType(media);
-            DsError.ThrowExceptionForHR(hr);
-
-            if ((media.formatType != FormatType.VideoInfo) || (media.formatPtr == IntPtr.Zero))
+            lock (_DeltaLock)
             {
-                throw new NotSupportedException("Unknown Grabber Media Format");
+                int hr;
+
+                // Get the media type from the SampleGrabber
+                AMMediaType media = new AMMediaType();
+
+                hr = _SampleGrabber.GetConnectedMediaType(media);
+                DsError.ThrowExceptionForHR(hr);
+
+                if ((media.formatType != FormatType.VideoInfo) || (media.formatPtr == IntPtr.Zero))
+                {
+                    throw new NotSupportedException("Unknown Grabber Media Format");
+                }
+
+                // Grab the size info
+                VideoInfoHeader videoInfoHeader = (VideoInfoHeader)Marshal.PtrToStructure(media.formatPtr, typeof(VideoInfoHeader));
+                _ResolutionWidth = videoInfoHeader.BmiHeader.Width;
+                _ResolutionHeight = videoInfoHeader.BmiHeader.Height;
+                _ResolutionBitsPerPixel = videoInfoHeader.BmiHeader.BitCount;
+                _ResolutionSizeBytes = videoInfoHeader.BmiHeader.ImageSize;
+
+                DsUtils.FreeAMMediaType(media);
+                media = null;
+
+                return new Resolution(_ResolutionWidth, _ResolutionHeight);
             }
-
-            // Grab the size info
-            VideoInfoHeader videoInfoHeader = (VideoInfoHeader)Marshal.PtrToStructure(media.formatPtr, typeof(VideoInfoHeader));
-            m_videoWidth = videoInfoHeader.BmiHeader.Width;
-            m_videoHeight = videoInfoHeader.BmiHeader.Height;
-            m_videoBitCount = videoInfoHeader.BmiHeader.BitCount;
-            m_ImageSize = videoInfoHeader.BmiHeader.ImageSize;
-
-            DsUtils.FreeAMMediaType(media);
-            media = null;
-
-            return new Resolution(m_videoWidth, m_videoHeight);
         }
 
         /// <summary>
@@ -149,219 +159,70 @@ namespace CameraNet
             return 0;
         }
 
+
+
         /// <summary>
         /// BufferCB callback 
         /// </summary>
         /// <remarks>COULD BE EXECUTED FROM FOREIGN THREAD.</remarks>
         int ISampleGrabberCB.BufferCB(double SampleTime, IntPtr pBuffer, int BufferLen)
         {
-            if (BufferLen == 0)
+            lock (_DeltaLock)
             {
-                Console.WriteLine("CameraNet.SampleGrabberHelper.BufferCB(...) Buffer Length 0");
+                if (_RawImageEventHandler == null)
+                {
+                    return 0;
+                }
+                if (BufferLen == 0)
+                {
+                    Console.WriteLine("CameraNet.SampleGrabberHelper.BufferCB(...) Buffer Length 0");
+                    return 0;
+                }
+                IntPtr m_ipBuffer = IntPtr.Zero;
+
+                // get ready to wait for new image
+                try
+                {
+                    m_ipBuffer = Marshal.AllocCoTaskMem(Math.Abs(_ResolutionBitsPerPixel / 8 * _ResolutionWidth) * _ResolutionHeight);
+                    NativeMethods.CopyMemory(m_ipBuffer, pBuffer, BufferLen);
+
+                    Bitmap bitmap_clone = null;
+
+                    PixelFormat pixelFormat = PixelFormat.Format24bppRgb;
+                    switch (_ResolutionBitsPerPixel)
+                    {
+                        case 24:
+                            pixelFormat = PixelFormat.Format24bppRgb;
+                            break;
+                        case 32:
+                            pixelFormat = PixelFormat.Format32bppRgb;
+                            break;
+                        case 48:
+                            pixelFormat = PixelFormat.Format48bppRgb;
+                            break;
+                        default:
+                            throw new Exception("Unsupported BitCount");
+                    }
+
+                    Bitmap bitmap = new Bitmap(_ResolutionWidth, _ResolutionHeight, (_ResolutionBitsPerPixel / 8) * _ResolutionWidth, pixelFormat, m_ipBuffer);
+
+                    bitmap_clone = bitmap.Clone(new Rectangle(0, 0, _ResolutionWidth, _ResolutionHeight), PixelFormat.Format24bppRgb);
+                    bitmap_clone.RotateFlip(this._RotateFlipType);
+
+                    Marshal.FreeCoTaskMem(m_ipBuffer);
+
+                    bitmap.Dispose();
+                    bitmap = null;
+
+                    _RawImageEventHandler(bitmap_clone);
+                }
+                catch
+                {
+                    Marshal.FreeCoTaskMem(m_ipBuffer);
+                }
+
                 return 0;
             }
-
-
-            IntPtr m_ipBuffer = IntPtr.Zero;
-
-            // get ready to wait for new image
-            try
-            {
-                m_ipBuffer = Marshal.AllocCoTaskMem(Math.Abs(m_videoBitCount / 8 * m_videoWidth) * m_videoHeight);
-                NativeMethods.CopyMemory(m_ipBuffer, pBuffer, BufferLen);
-
-                lock (_LastImageLock)
-                {
-                    if (_LastImage != IntPtr.Zero)
-                        Marshal.FreeCoTaskMem(_LastImage);
-
-                    _LastImage = m_ipBuffer;
-                }
-            }
-            catch
-            {
-                Marshal.FreeCoTaskMem(m_ipBuffer);
-            }
-
-            return 0;
-        }
-
-        private IntPtr _LastImage = IntPtr.Zero;
-        private readonly object _LastImageLock = new object();
-
-
-
-        /// <summary>
-        /// Makes a snapshot of next frame
-        /// </summary>
-        /// <returns>Bitmap with snapshot</returns>
-        public Bitmap SnapshotNextFrame(RotateFlipType rft)
-        {
-            if (m_SampleGrabber == null)
-                throw new Exception("SampleGrabber was not initialized");
-
-
-            lock (_LastImageLock)
-            {
-                if (_LastImage == IntPtr.Zero) throw new Exception("No Image");
-
-                Bitmap bitmap_clone = null;
-
-                PixelFormat pixelFormat = PixelFormat.Format24bppRgb;
-                switch (m_videoBitCount)
-                {
-                    case 24:
-                        pixelFormat = PixelFormat.Format24bppRgb;
-                        break;
-                    case 32:
-                        pixelFormat = PixelFormat.Format32bppRgb;
-                        break;
-                    case 48:
-                        pixelFormat = PixelFormat.Format48bppRgb;
-                        break;
-                    default:
-                        throw new Exception("Unsupported BitCount");
-                }
-
-                Bitmap bitmap = new Bitmap(m_videoWidth, m_videoHeight, (m_videoBitCount / 8) * m_videoWidth, pixelFormat, _LastImage);
-
-                bitmap_clone = bitmap.Clone(new Rectangle(0, 0, m_videoWidth, m_videoHeight), PixelFormat.Format24bppRgb);
-                bitmap_clone.RotateFlip(rft);
-
-                Marshal.FreeCoTaskMem(_LastImage);
-                _LastImage = IntPtr.Zero;
-
-                bitmap.Dispose();
-                bitmap = null;
-
-                return bitmap_clone;
-            }
-        }
-
-
-        /// <summary>
-        /// Makes a snapshot of current frame
-        /// </summary>
-        /// <returns>Bitmap with snapshot</returns>
-        public Bitmap SnapshotCurrentFrame()
-        {
-            if (m_SampleGrabber == null)
-                throw new Exception("SampleGrabber was not initialized");
-
-            if (!m_bBufferSamplesOfCurrentFrame)
-                throw new Exception("SampleGrabberHelper was created without buffering-mode (buffer of current frame)");
-
-            // capture image
-            IntPtr ip = GetCurrentFrame();
-
-            Bitmap bitmap_clone = null;
-
-            PixelFormat pixelFormat = PixelFormat.Format24bppRgb;
-            switch (m_videoBitCount)
-            {
-                case 24:
-                    pixelFormat = PixelFormat.Format24bppRgb;
-                    break;
-                case 32:
-                    pixelFormat = PixelFormat.Format32bppRgb;
-                    break;
-                case 48:
-                    pixelFormat = PixelFormat.Format48bppRgb;
-                    break;
-                default:
-
-                    throw new Exception("Unsupported BitCount");
-            }
-
-            Bitmap bitmap = new Bitmap(m_videoWidth, m_videoHeight, (m_videoBitCount / 8) * m_videoWidth, pixelFormat, ip);
-
-            bitmap_clone = bitmap.Clone(new Rectangle(0, 0, m_videoWidth, m_videoHeight), PixelFormat.Format24bppRgb);
-            bitmap_clone.RotateFlip(RotateFlipType.RotateNoneFlipY);
-
-
-            // Release any previous buffer
-            if (ip != IntPtr.Zero)
-            {
-                Marshal.FreeCoTaskMem(ip);
-                ip = IntPtr.Zero;
-            }
-
-            bitmap.Dispose();
-            bitmap = null;
-
-            return bitmap_clone;
-        }
-
-
-        #endregion
-
-        #region Private
-        /// <summary>
-        /// Video frame width. Calculated once in constructor for perf.
-        /// </summary>
-        private int m_videoWidth;
-
-        /// <summary>
-        /// Video frame height. Calculated once in constructor for perf.
-        /// </summary>
-        private int m_videoHeight;
-
-        /// <summary>
-        /// Video frame bits per pixel.
-        /// </summary>
-        private int m_videoBitCount;
-
-        /// <summary>
-        /// Size of frame in bytes.
-        /// </summary>
-        private int m_ImageSize;
-
-        /// <summary>
-        /// Pointer to COM-interface ISampleGrabber.
-        /// </summary>
-        private ISampleGrabber m_SampleGrabber = null;
-
-        /// <summary>
-        /// Flag means should helper store (buffer) samples of current frame or not.
-        /// </summary>
-        private bool m_bBufferSamplesOfCurrentFrame = false;
-        
-        /// <summary>
-        /// Grab a snapshot of the most recent image played.
-        /// Returns A pointer to the raw pixel data.
-        /// Caller must release this memory with Marshal.FreeCoTaskMem when it is no longer needed.
-        /// </summary>
-        /// <returns>A pointer to the raw pixel data</returns>
-        private IntPtr GetCurrentFrame()
-        {
-            if ( ! m_bBufferSamplesOfCurrentFrame )
-                throw new Exception("SampleGrabberHelper was created without buffering-mode (buffer of current frame)");
-
-            int hr = 0;
-
-            IntPtr ip = IntPtr.Zero;
-            int iBuffSize = 0;
-
-            // Read the buffer size
-            hr = m_SampleGrabber.GetCurrentBuffer(ref iBuffSize, ip);
-            DsError.ThrowExceptionForHR(hr);
-
-            Debug.Assert(iBuffSize == m_ImageSize, "Unexpected buffer size");
-
-            // Allocate the buffer and read it
-            ip = Marshal.AllocCoTaskMem(iBuffSize);
-
-            hr = m_SampleGrabber.GetCurrentBuffer(ref iBuffSize, ip);
-            DsError.ThrowExceptionForHR(hr);
-
-            return ip;
-        }
-
-        #endregion
-
-        public bool Ready()
-        {
-            return this.m_SampleGrabber != null;
         }
     }
 }
