@@ -60,9 +60,6 @@ namespace CameraNet
             m_SampleGrabber = sampleGrabber;
 
             m_bBufferSamplesOfCurrentFrame = buffer_samples_of_current_frame;
-
-            // tell the callback to ignore new images
-            m_PictureReady = new ManualResetEvent(false);
         }
 
         /// <summary>
@@ -70,11 +67,7 @@ namespace CameraNet
         /// </summary>
         public void Dispose()
         {
-            if (m_PictureReady != null)
-            {
-                m_PictureReady.Close();
-            }
-
+ 
             m_SampleGrabber = null;
         }
 
@@ -162,27 +155,40 @@ namespace CameraNet
         /// <remarks>COULD BE EXECUTED FROM FOREIGN THREAD.</remarks>
         int ISampleGrabberCB.BufferCB(double SampleTime, IntPtr pBuffer, int BufferLen)
         {
-            // Note that we depend on only being called once per call to Click.  Otherwise
-            // a second call can overwrite the previous image.
-
-            if (BufferLen == 0) return 0;
-
-            Debug.Assert(BufferLen == Math.Abs(m_videoBitCount/8*m_videoWidth) * m_videoHeight, "Incorrect buffer length");
-
-            if (m_bWantOneFrame)
+            if (BufferLen == 0)
             {
-                m_bWantOneFrame = false;
-                Debug.Assert(m_ipBuffer != IntPtr.Zero, "Unitialized buffer");
+                Console.WriteLine("CameraNet.SampleGrabberHelper.BufferCB(...) Buffer Length 0");
+                return 0;
+            }
 
-                // Save the buffer
+
+            IntPtr m_ipBuffer = IntPtr.Zero;
+
+            // get ready to wait for new image
+            try
+            {
+                m_ipBuffer = Marshal.AllocCoTaskMem(Math.Abs(m_videoBitCount / 8 * m_videoWidth) * m_videoHeight);
                 NativeMethods.CopyMemory(m_ipBuffer, pBuffer, BufferLen);
 
-                // Picture is ready.
-                m_PictureReady.Set();
+                lock (_LastImageLock)
+                {
+                    if (_LastImage != IntPtr.Zero)
+                        Marshal.FreeCoTaskMem(_LastImage);
+
+                    _LastImage = m_ipBuffer;
+                }
+            }
+            catch
+            {
+                Marshal.FreeCoTaskMem(m_ipBuffer);
             }
 
             return 0;
         }
+
+        private IntPtr _LastImage = IntPtr.Zero;
+        private readonly object _LastImageLock = new object();
+
 
 
         /// <summary>
@@ -194,48 +200,42 @@ namespace CameraNet
             if (m_SampleGrabber == null)
                 throw new Exception("SampleGrabber was not initialized");
 
-            // capture image
-            IntPtr ip = GetNextFrame();
 
-            if (ip == IntPtr.Zero)
+            lock (_LastImageLock)
             {
-                throw new Exception("Can not snap next frame");
+                if (_LastImage == IntPtr.Zero) throw new Exception("No Image");
+
+                Bitmap bitmap_clone = null;
+
+                PixelFormat pixelFormat = PixelFormat.Format24bppRgb;
+                switch (m_videoBitCount)
+                {
+                    case 24:
+                        pixelFormat = PixelFormat.Format24bppRgb;
+                        break;
+                    case 32:
+                        pixelFormat = PixelFormat.Format32bppRgb;
+                        break;
+                    case 48:
+                        pixelFormat = PixelFormat.Format48bppRgb;
+                        break;
+                    default:
+                        throw new Exception("Unsupported BitCount");
+                }
+
+                Bitmap bitmap = new Bitmap(m_videoWidth, m_videoHeight, (m_videoBitCount / 8) * m_videoWidth, pixelFormat, _LastImage);
+
+                bitmap_clone = bitmap.Clone(new Rectangle(0, 0, m_videoWidth, m_videoHeight), PixelFormat.Format24bppRgb);
+                bitmap_clone.RotateFlip(rft);
+
+                Marshal.FreeCoTaskMem(_LastImage);
+                _LastImage = IntPtr.Zero;
+
+                bitmap.Dispose();
+                bitmap = null;
+
+                return bitmap_clone;
             }
-
-            Bitmap bitmap_clone = null;
-            
-            PixelFormat pixelFormat = PixelFormat.Format24bppRgb;
-            switch (m_videoBitCount)
-            {
-                case 24:
-                    pixelFormat = PixelFormat.Format24bppRgb;
-                    break;
-                case 32:
-                    pixelFormat = PixelFormat.Format32bppRgb;
-                    break;
-                case 48:
-                    pixelFormat = PixelFormat.Format48bppRgb;
-                    break;
-                default:
-                    throw new Exception("Unsupported BitCount");
-            }
-
-            Bitmap bitmap = new Bitmap(m_videoWidth, m_videoHeight, (m_videoBitCount / 8) * m_videoWidth, pixelFormat, ip);
-
-            bitmap_clone = bitmap.Clone(new Rectangle(0, 0, m_videoWidth, m_videoHeight), PixelFormat.Format24bppRgb);
-            bitmap_clone.RotateFlip(rft);
-
-            // Release any previous buffer
-            if (ip != IntPtr.Zero)
-            {
-                Marshal.FreeCoTaskMem(ip);
-                ip = IntPtr.Zero;
-            }
-
-            bitmap.Dispose();
-            bitmap = null;
-
-            return bitmap_clone;
         }
 
 
@@ -296,22 +296,6 @@ namespace CameraNet
         #endregion
 
         #region Private
-
-        /// <summary>
-        /// Flag to wait for the async job to finish.
-        /// </summary>
-        private volatile ManualResetEvent m_PictureReady = null;
-
-        /// <summary>
-        /// Flag indicates we want to store a frame.
-        /// </summary>
-        private volatile bool m_bWantOneFrame = false;
-
-        /// <summary>
-        /// Buffer for bitmap data.  Always release by caller.
-        /// </summary>
-        private IntPtr m_ipBuffer = IntPtr.Zero;
-
         /// <summary>
         /// Video frame width. Calculated once in constructor for perf.
         /// </summary>
@@ -341,41 +325,7 @@ namespace CameraNet
         /// Flag means should helper store (buffer) samples of current frame or not.
         /// </summary>
         private bool m_bBufferSamplesOfCurrentFrame = false;
-
-        /// <summary>
-        /// Get the image from the Still pin.  The returned image can turned into a bitmap with
-        /// Bitmap b = new Bitmap(cam.Width, cam.Height, cam.Stride, PixelFormat.Format24bppRgb, m_ip);
-        /// If the image is upside down, you can fix it with
-        /// b.RotateFlip(RotateFlipType.RotateNoneFlipY);
-        /// </summary>
-        /// <returns>Returned pointer to be freed by caller with Marshal.FreeCoTaskMem</returns>
-        private IntPtr GetNextFrame()
-        {
-            // get ready to wait for new image
-            m_PictureReady.Reset();
-            m_ipBuffer = Marshal.AllocCoTaskMem(Math.Abs(m_videoBitCount / 8 * m_videoWidth) * m_videoHeight);
-
-            try
-            {
-                m_bWantOneFrame = true;
-
-                // Start waiting
-                if (!m_PictureReady.WaitOne(1000, false))
-                {
-                    throw new Exception("Timeout while waiting to get a snapshot");
-                }
-            }
-            catch
-            {
-                Marshal.FreeCoTaskMem(m_ipBuffer);
-                m_ipBuffer = IntPtr.Zero;
-                throw;
-            }
-
-            // Got one
-            return m_ipBuffer;
-        }
-
+        
         /// <summary>
         /// Grab a snapshot of the most recent image played.
         /// Returns A pointer to the raw pixel data.

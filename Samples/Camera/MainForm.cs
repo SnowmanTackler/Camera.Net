@@ -226,8 +226,7 @@ namespace SampleProject
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, @"Error while getting a snapshot");
-                    this.CloseCamera();
+                    Console.WriteLine(ex.Message, @"Error while getting a snapshot");
                 }
 
                 return;
