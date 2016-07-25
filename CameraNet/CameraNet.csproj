@@ -11,7 +11,7 @@
     </ApplicationIcon>
     <AssemblyKeyContainerName>
     </AssemblyKeyContainerName>
-    <AssemblyName>Camera.Net</AssemblyName>
+    <AssemblyName>CameraNet</AssemblyName>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
@@ -19,7 +19,7 @@
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
     <DelaySign>false</DelaySign>
     <OutputType>Library</OutputType>
-    <RootNamespace>Camera.Net</RootNamespace>
+    <RootNamespace>CameraNet</RootNamespace>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <StartupObject>
     </StartupObject>
@@ -111,6 +111,7 @@
     <Compile Include="Public\CameraControl.Designer.cs">
       <DependentUpon>CameraControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Public\CameraHelpers.cs" />
     <Compile Include="Public\CameraSnap.cs" />
     <Compile Include="Public\ResolutionList.cs" />
     <Compile Include="Internal\AssemblyInfo.cs">
@@ -122,7 +123,7 @@
     <Compile Include="Public\CameraChoice.cs" />
     <Compile Include="Internal\Direct3DMixing.cs" />
     <Compile Include="Internal\DirectXInterfaces.cs" />
-    <Compile Include="Internal\NativeMethodes.cs" />
+    <Compile Include="Internal\NativeMethods.cs" />
     <Compile Include="Public\Resolution.cs" />
     <Compile Include="Internal\SampleGrabberHelper.cs" />
     <Compile Include="Public\VideoInput.cs" />

@@ -405,7 +405,7 @@ namespace CameraNet
         /// <seealso cref="Moniker"/>
         public static void DisplayPropertyPage_Device(IMoniker moniker, IntPtr hwndOwner)
         {
-            Camera.DisplayPropertyPage_Device(moniker, hwndOwner);
+            CameraHelpers.DisplayPropertyPage_Device(moniker, hwndOwner);
         }
 
         /// <summary>
@@ -548,7 +548,7 @@ namespace CameraNet
         /// <returns>Moniker (device identification) of device</returns>
         public static IMoniker GetDeviceMoniker(int iDeviceNum)
         {
-            return Camera.GetDeviceMoniker(iDeviceNum);
+            return CameraHelpers.GetDeviceMoniker(iDeviceNum);
         }
 
         /// <summary>
@@ -558,7 +558,7 @@ namespace CameraNet
         /// <returns>List of resolutions with RGB color system of device</returns>
         public static ResolutionList GetResolutionList(IMoniker moniker)
         {
-            return Camera.GetResolutionList(moniker);
+            return CameraHelpers.GetResolutionList(moniker);
         }
 
         #endregion

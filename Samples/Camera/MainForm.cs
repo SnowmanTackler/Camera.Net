@@ -114,7 +114,7 @@ namespace SampleProject
         {
             if (this._Camera == null) return;
 
-            CameraSnap.DisplayPropertyPage_Device(this._Camera.Moniker, this.Handle);
+            CameraHelpers.DisplayPropertyPage_Device(this._Camera.Moniker, this.Handle);
         }
 
         private void comboBoxCameraList_SelectedIndexChanged(object sender, EventArgs e)
@@ -141,7 +141,7 @@ namespace SampleProject
             {
                 return;
             }
-            ResolutionList resolutions = CameraSnap.GetResolutionList(this._Camera.Moniker);
+            ResolutionList resolutions = CameraHelpers.GetResolutionList(this._Camera.Moniker);
 
             if (resolutions == null)
                 return;
@@ -167,7 +167,7 @@ namespace SampleProject
             if (this._Camera == null) return;
             if (this._Camera.Resolution == null) return;
 
-            ResolutionList resolutions = CameraSnap.GetResolutionList(this._Camera.Moniker);
+            ResolutionList resolutions = CameraHelpers.GetResolutionList(this._Camera.Moniker);
 
             if (resolutions == null)return;
 

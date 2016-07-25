@@ -37,7 +37,7 @@ namespace CameraNet
     /// 
     /// <author> free5lot (free5lot@yandex.ru) </author>
     /// <version> 2013.10.16 </version>
-    public sealed class NativeMethodes
+    public sealed class NativeMethods
     {
     // Graphics.GetHdc() have several "bugs" detailed here : 
     // http://support.microsoft.com/default.aspx?scid=kb;en-us;311221

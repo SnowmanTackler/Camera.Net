@@ -175,7 +175,7 @@ namespace CameraNet
                 Debug.Assert(m_ipBuffer != IntPtr.Zero, "Unitialized buffer");
 
                 // Save the buffer
-                NativeMethodes.CopyMemory(m_ipBuffer, pBuffer, BufferLen);
+                NativeMethods.CopyMemory(m_ipBuffer, pBuffer, BufferLen);
 
                 // Picture is ready.
                 m_PictureReady.Set();
