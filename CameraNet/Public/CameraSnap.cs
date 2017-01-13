@@ -147,6 +147,7 @@ namespace CameraNet
                 ApplyDirectShowLogFile();
             }
         }
+
         #endregion
 
 
@@ -301,6 +302,13 @@ namespace CameraNet
             GC.WaitForPendingFinalizers();
 #endif
         }
+
+        public void UpdateRotateFlipType(RotateFlipType rft)
+        {
+            if (_pSampleGrabberHelper != null)
+                _pSampleGrabberHelper.UpdateRotateFlipType(rft);
+        }
+
 
         /// <summary>
         /// Runs DirectShow graph for rendering.

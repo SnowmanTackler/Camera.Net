@@ -48,7 +48,7 @@ namespace CameraNet
     /// <version> 2013.10.17 </version>
     internal sealed class SampleGrabberHelper : ISampleGrabberCB, IDisposable
     {
-        private readonly RotateFlipType _RotateFlipType;
+        private RotateFlipType _RotateFlipType;
         private Action<Bitmap> _RawImageEventHandler = null;
 
         private int _ResolutionWidth;
@@ -60,7 +60,7 @@ namespace CameraNet
         /// Pointer to COM-interface ISampleGrabber.
         /// </summary>
         private ISampleGrabber _SampleGrabber = null;
-        private object _DeltaLock = new object();
+        private readonly object _DeltaLock = new object();
 
         /// <summary>
         /// Default constructor for <see cref="SampleGrabberHelper"/> class.
@@ -167,6 +167,8 @@ namespace CameraNet
         /// <remarks>COULD BE EXECUTED FROM FOREIGN THREAD.</remarks>
         int ISampleGrabberCB.BufferCB(double SampleTime, IntPtr pBuffer, int BufferLen)
         {
+            Bitmap bitmap_clone = null;
+
             lock (_DeltaLock)
             {
                 if (_RawImageEventHandler == null)
@@ -175,7 +177,7 @@ namespace CameraNet
                 }
                 if (BufferLen == 0)
                 {
-                    Console.WriteLine("CameraNet.SampleGrabberHelper.BufferCB(...) Buffer Length 0");
+                    Console.WriteLine(this.GetType().FullName.ToString() + "BufferCB(...) Buffer Length 0");
                     return 0;
                 }
                 IntPtr m_ipBuffer = IntPtr.Zero;
@@ -185,8 +187,6 @@ namespace CameraNet
                 {
                     m_ipBuffer = Marshal.AllocCoTaskMem(Math.Abs(_ResolutionBitsPerPixel / 8 * _ResolutionWidth) * _ResolutionHeight);
                     NativeMethods.CopyMemory(m_ipBuffer, pBuffer, BufferLen);
-
-                    Bitmap bitmap_clone = null;
 
                     PixelFormat pixelFormat = PixelFormat.Format24bppRgb;
                     switch (_ResolutionBitsPerPixel)
@@ -213,16 +213,23 @@ namespace CameraNet
 
                     bitmap.Dispose();
                     bitmap = null;
-
-                    _RawImageEventHandler(bitmap_clone);
                 }
                 catch
                 {
                     Marshal.FreeCoTaskMem(m_ipBuffer);
                 }
 
-                return 0;
             }
+
+            if (bitmap_clone != null)
+                this._RawImageEventHandler(bitmap_clone);
+            return 0;
+        }
+
+        internal void UpdateRotateFlipType(RotateFlipType rft)
+        {
+            lock (_DeltaLock)
+                this._RotateFlipType = rft;
         }
     }
 }
