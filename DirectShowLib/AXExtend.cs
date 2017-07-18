@@ -2263,7 +2263,9 @@ namespace DirectShowLib
     [ComImport, System.Security.SuppressUnmanagedCodeSecurity,
     Guid("02997C3B-8E1B-460e-9270-545E0DE9563E"),
     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+#pragma warning disable CS0618 // Type or member is obsolete
     public interface IVideoEncoder : IEncoderAPI
+#pragma warning restore CS0618 // Type or member is obsolete
     {
         #region IEncoderAPI Methods
 
